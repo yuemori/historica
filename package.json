@@ -5,9 +5,11 @@
   "main": "src/electron-starter.js",
   "homepage": "./",
   "dependencies": {
+    "bootstrap": "4.0.0",
     "react": "^16.4.0",
     "react-dom": "^16.4.0",
-    "react-scripts": "1.1.4"
+    "react-scripts": "1.1.4",
+    "reactstrap": "^6.0.1"
   },
   "scripts": {
     "start": "react-scripts start",
