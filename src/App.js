@@ -2,12 +2,18 @@ import React, { Component } from 'react';
 import 'bootstrap/dist/css/bootstrap.css';
 import Menu from './Menu.js'
 import { Container, Row, Col } from 'reactstrap'
+import RepositorySelector from './RepositorySelector';
 
 class App extends Component {
   render() {
     return (
       <Container fluid={true}>
         <Menu></Menu>
+        <Row className="mt-4">
+          <Col>
+            <RepositorySelector />
+          </Col>
+        </Row>
       </Container>
     );
   }
