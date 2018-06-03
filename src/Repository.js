@@ -1,8 +1,8 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { Row, Col, ListGroup, ListGroupItem, Badge } from 'reactstrap'
-
-const NodeGit = require('nodegit');
+import { Row, Col } from 'reactstrap'
+import Git from 'nodegit';
+import History from './History';
 
 export default class Repository extends Component {
   propTypes: {
@@ -16,35 +16,32 @@ export default class Repository extends Component {
   }
 
   componentWillReceiveProps(newProps) {
-    console.log(newProps);
     this.onOpen(newProps.path);
   }
 
   async onOpen(path) {
     try {
-      const repository = await NodeGit.Repository.open(path + '/.git');
-      const head = await repository.getHeadCommit();
-      const history = head.history();
-      history.on('end', async (commits) => {
-        this.setState({ commits: commits });
-      });
-      history.start();
+      const repository = await Git.Repository.open(path + '/.git');
+      this.setState({ repository: repository });
     } catch(err) {
       console.log(err);
-      this.state = { commits: [] }
     }
   }
 
   render() {
+    const style = {
+      overflow: "scroll",
+      height: "200px"
+    };
     return (
       <div>
+        <Row className="mt-4" style={style}>
+          <Col>
+            <History repository={this.state.repository} />
+          </Col>
+        </Row>
         <Row className="mt-4">
           <Col>
-            <ListGroup>
-              {this.state.commits.map((commit) => {
-                return <ListGroupItem key={commit.sha()}><Badge pill>{commit.sha().slice(0, 6)}</Badge> {commit.message()}</ListGroupItem>
-              })}
-            </ListGroup>
           </Col>
         </Row>
       </div>
