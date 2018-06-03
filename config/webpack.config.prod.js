@@ -104,6 +104,9 @@ module.exports = {
       new ModuleScopePlugin(paths.appSrc, [paths.appPackageJson]),
     ],
   },
+  externals: {
+    nodegit: 'commonjs nodegit'
+  },
   module: {
     strictExportPresence: true,
     rules: [
