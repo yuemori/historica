@@ -13,7 +13,6 @@ export default class RepositorySelector extends Component {
   onOpenDialog() {
     const folderName = dialog.showOpenDialog({ properties: ['openDirectory'], title: 'Gitリポジトリを選択', })[0];
     this.setState({ repositoryPath: folderName, isSelected: true });
-    console.log(this.props);
     this.props.onRepositoryOpen(folderName);
   }
 
