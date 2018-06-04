@@ -1,9 +1,84 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { ListGroup, ListGroupItem, Badge, Button } from 'reactstrap';
+import { Badge, Button } from 'reactstrap';
 import FontAwesomeIcon from '@fortawesome/react-fontawesome'
 import checkSquare from '@fortawesome/fontawesome-free-solid/faCheckSquare'
 import Square from '@fortawesome/fontawesome-free-solid/faSquare'
+
+class Commit {
+  constructor({ sha, message, time, date }) {
+    this.sha = sha;
+    this.message = message;
+    this.time = time;
+    this.date = date;
+    this.children = [];
+  }
+
+  add(commit) {
+    this.children.push(commit);
+  }
+}
+
+class Branch {
+  constructor(name) {
+    this.commits = [];
+    this.name = name
+  }
+
+  commit({ sha, message}) {
+    const commit = new Commit({ sha: sha, message: message })
+
+    if(this.commits.length !== 0) {
+      this.commits[this.commits.length - 1].add(commit);
+    }
+
+    this.commits.push(commit);
+  }
+}
+
+class GitGraph {
+  constructor({ width, contentHeight, dotStrokeWidth, lineStokeWidth }) {
+    this.width = width;
+    this.contentHeight = contentHeight;
+    this.dotStrokeWidth = dotStrokeWidth;
+    this.lineStokeWidth = lineStokeWidth;
+    this.branches = [];
+  }
+
+  branch(name) {
+    const branch = new Branch(name);
+    this.branches.push(branch);
+    return branch;
+  }
+
+  commits() {
+    return Array.prototype.concat.apply([], this.branches.map((branch) => branch.commits));
+  }
+
+  render() {
+    const cx = 15;
+    const cy = 15;
+
+    return (
+      <svg width={this.width} height={this.commits().length * this.contentHeight}>
+      {this.commits().map((commit, i) => {
+        return (
+          <g width={this.width} height={this.contentHeight} y="30">
+            <circle cx={cx} cy={cy + this.contentHeight * i} r={this.dotStrokeWidth}/>
+
+            <foreignObject width="100%" height={this.contentHeight} className="node" x="50" y={this.contentHeight * i}>
+              <Badge pill className="mr-2" style={{"width": "80px"}}>{commit.sha.slice(0, 7)}</Badge>
+
+              {commit.message}
+            </foreignObject>
+            <line x1={cx} x2={cx} y1={cy + this.contentHeight * i} y2={cy + this.contentHeight * (i + 1)} stroke="#000000" />
+          </g>
+        )
+      })}
+      </svg>
+    )
+  }
+}
 
 export default class History extends Component {
   propTypes: {
@@ -12,7 +87,6 @@ export default class History extends Component {
 
   constructor(props) {
     super(props);
-    console.log(props);
     this.state = { commits: [] };
   }
 
@@ -29,25 +103,19 @@ export default class History extends Component {
   }
 
   render() {
-    return (
-      <ListGroup>
-        {this.state.commits.map((commit, i) => {
-          return (
-            <ListGroupItem key={commit.sha()}>
-              <Button color={commit.sha() === this.state.ref1 ? "primary" : "default" } onClick={() => this.onRef1Click(commit)} className="mr-3">
-                <FontAwesomeIcon icon={commit.sha() === this.state.ref1 ? checkSquare : Square } />
-              </Button>
-              <Button color={commit.sha() === this.state.ref2 ? "primary" : "default" } onClick={() => this.onRef2Click(commit)} className="mr-3">
-                <FontAwesomeIcon icon={commit.sha() === this.state.ref2 ? checkSquare : Square } />
-              </Button>
+    const {commits} = this.state;
+    const graph = new GitGraph({
+      width: "947px",
+      contentHeight: 50,
+      dotStrokeWidth: 10,
+      lineStokeWidth: 1,
+    });
+    const master = graph.branch('master');
 
-              <Badge pill className="mr-2" style={{"width": "80px"}}>{commit.sha().slice(0, 7)}</Badge>
+    commits.forEach((commit) => {
+      master.commit({ sha: commit.sha(), message: commit.message(), time: commit.time(), date: commit.date()});
+    });
 
-              {commit.message()}
-            </ListGroupItem>
-          )
-        })}
-      </ListGroup>
-    )
+    return graph.render();
   }
 }
