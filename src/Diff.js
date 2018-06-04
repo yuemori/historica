@@ -68,13 +68,16 @@ export default class Diff extends Component {
         }
       }
       const type = f(origin);
+      const isNormal = type === 'normal';
+      const isInsert = type === 'insert';
+      const isDelete = type === 'delete';
       return {
         type: type,
         content: line.content(),
-        isNormal: type === 'normal',
-        isInsert: type === 'insert',
-        isDelete: type === 'delete',
-        lineNumber: line.numLines(),
+        isNormal: isNormal,
+        isInsert: isInsert,
+        isDelete: isDelete,
+        lineNumber: isDelete ? line.oldLineno() : line.newLineno(),
         oldLineNumber: line.oldLineno(),
         oldNewNumber: line.newLineno(),
       }

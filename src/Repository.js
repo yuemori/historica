@@ -23,7 +23,6 @@ export default class Repository extends Component {
   async onOpen(path) {
     try {
       const repository = await Git.Repository.open(path + '/.git');
-      console.log(repository);
       this.setState({ repository: repository });
     } catch(err) {
       this.setState({ repository: null });
