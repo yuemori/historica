@@ -9,7 +9,7 @@ export default class History extends Component {
 
   constructor(props) {
     super(props);
-    this.state = { repository: null, commits: [] };
+    this.state = { commits: [] };
   }
 
   componentWillReceiveProps(newProps) {

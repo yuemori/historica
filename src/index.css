@@ -1,5 +1,54 @@
+@import "~react-diff-view/index.css"
+
 body {
   margin: 0;
   padding: 0;
   font-family: sans-serif;
 }
+
+.diff-file {
+    margin-top: 2em;
+    border: 1px solid #e1e1e1;
+}
+
+.diff-file-header {
+    background-color: #f7f7fa;
+    line-height: 3;
+    padding-left: 1em;
+    border-bottom: 1px solid #e1e1e1;
+}
+
+.filename {
+    margin-right: 1em;
+}
+
+.addition-count {
+    margin-right: 1em;
+    color: #88b149;
+}
+
+.deletion-count {
+    margin-right: 1em;
+    color: #ee5b60;
+}
+.diff-hunk-header {
+    line-height: 2;
+    font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, Courier, monospace;
+}
+
+.diff-hunk-header-gutter {
+    background-color: #deecfe;
+    position: relative;
+    cursor: pointer;
+}
+
+.diff-hunk-header-gutter:hover {
+    background-color: #4677d2;
+}
+
+.diff-hunk-header-content {
+    background-color: #f2f8ff;
+    padding-left: .5em;
+    color: #999;
+}
+
