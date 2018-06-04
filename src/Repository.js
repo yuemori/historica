@@ -17,6 +17,7 @@ export default class Repository extends Component {
   }
 
   componentWillReceiveProps(newProps) {
+    this.setState({ repository: null, commits: [], ref1: null, ref2: null });
     this.onOpen(newProps.path);
   }
 
