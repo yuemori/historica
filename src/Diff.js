@@ -13,11 +13,13 @@ export default class Diff extends Component {
   }
 
   async onOpen(props) {
-    const {repository, head, ref1, ref2} = props;
-    if(repository == null) {
+    const {path, head, ref1, ref2} = props;
+    if(path == null) {
       this.setState({ fileChanges: [] });
       return;
     }
+
+    const repository = await Git.Repository.open(path + '/.git');
 
     if(ref1 === head && ref2 === head) {
       this.setState({ fileChanges: await this.getUnCommitedChanges(repository) });
