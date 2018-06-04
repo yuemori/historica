@@ -28,7 +28,7 @@ export default class Repository extends Component {
       const head = await repository.getHeadCommit();
       const history = head.history();
       history.on('end', async (commits) => {
-        this.setState({ commits: commits, ref1: head.sha(), ref2: head.sha() });
+        this.setState({ commits: commits, head: head.sha(), ref1: head.sha(), ref2: head.sha() });
       });
       history.start();
     } catch(err) {
@@ -51,7 +51,7 @@ export default class Repository extends Component {
         </Row>
         <Row className="mt-4">
           <Col>
-            <Diff repository={this.state.repository} ref1={this.state.ref1} ref2={this.state.ref2}/>
+            <Diff repository={this.state.repository} head={this.state.head} ref1={this.state.ref1} ref2={this.state.ref2}/>
           </Col>
         </Row>
       </div>
