@@ -9,29 +9,32 @@ export default class Diff extends Component {
   }
 
   componentWillReceiveProps(newProps) {
-    this.onOpen(newProps.repository);
+    this.onOpen(newProps);
   }
 
-  async onOpen(repository) {
-    if(repository == null) {
+  async onOpen(props) {
+    const {repository, ref1, ref2} = props;
+    if(repository == null || ref1 == null || ref2 == null) {
       this.setState({ fileChanges: [] });
       return;
     }
 
-    const patches = await this.getCurrentPatches(repository);
+    const patches = await this.getCurrentPatches(repository, ref1, ref2);
     const fileChanges = await this.generateFileChanges(patches)
 
     this.setState({ fileChanges: fileChanges });
   }
 
-  async getCurrentPatches(repository) {
-    const head = await repository.getHeadCommit();
-    const indexed = await Git.Diff.treeToIndex(repository, await head.getTree(), null).then((diff) => diff.patches());
+  async getCurrentPatches(repository, ref1, ref2) {
+    const rev1 = await repository.getCommit(ref1);
+    const rev2 = await repository.getCommit(ref2);
+    const indexed = await Git.Diff.treeToIndex(repository, await rev1.getTree(), null).then((diff) => diff.patches());
 
     const flags = Git.Diff.OPTION.SHOW_UNTRACKED_CONTENT | Git.Diff.OPTION.RECURSE_UNTRACKED_DIRS;
     const unstaged = await Git.Diff.indexToWorkdir(repository, null, { flags: flags }).then((diff) => diff.patches());
+    const diff = await Git.Diff.treeToTree(repository, await rev1.getTree(), await rev2.getTree()).then((diff) => diff.patches());
 
-    return unstaged.concat(indexed);
+    return unstaged.concat(indexed).concat(diff);
   }
 
   async getHunksByPatch(patch) {
