@@ -148,11 +148,12 @@ module.exports = {
             include: paths.appSrc,
             loader: require.resolve('babel-loader'),
             options: {
-              
               // This is a feature of `babel-loader` for webpack (not Babel itself).
               // It enables caching results in ./node_modules/.cache/babel-loader/
               // directory for faster rebuilds.
               cacheDirectory: true,
+              presets: [['env', {'modules': false}], 'react'],
+              plugins: ['babel-plugin-transform-async-generator-functions']
             },
           },
           // "postcss" loader applies autoprefixer to our CSS.

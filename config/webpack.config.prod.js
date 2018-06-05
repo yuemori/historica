@@ -152,8 +152,9 @@ module.exports = {
             include: paths.appSrc,
             loader: require.resolve('babel-loader'),
             options: {
-              
               compact: true,
+              presets: [['env', {'modules': false}], 'react'],
+              plugins: ['babel-plugin-transform-async-generator-functions']
             },
           },
           // The notation here is somewhat confusing.
