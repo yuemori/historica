@@ -6,7 +6,7 @@ export default class Menu extends Component {
     return (
       <div>
         <Navbar color="dark" dark expand={true}>
-          <NavbarBrand href="#">Ehistorika</NavbarBrand>
+          <NavbarBrand href="#">Historica</NavbarBrand>
         </Navbar>
       </div>
     )
