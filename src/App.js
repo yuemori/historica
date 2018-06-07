@@ -8,7 +8,7 @@ import Repository from './Repository';
 class App extends Component {
   constructor() {
     super();
-    this.state = { folderName: '' };
+    this.state = { folderName: '.' };
   }
 
   async onRepositoryOpen(folderName) {
