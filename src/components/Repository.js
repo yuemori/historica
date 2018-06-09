@@ -4,7 +4,7 @@ import { Row, Col } from 'reactstrap'
 import Git from 'nodegit';
 import History from './History';
 import Diff from './Diff';
-import HunkGenerator from './HunkGenerator'
+import HunkGenerator from '../models/HunkGenerator'
 
 const commitLoader = (repository, count) => {
   const iterator = asyncCommitIterator(repository);
