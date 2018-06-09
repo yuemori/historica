@@ -41,8 +41,6 @@ async function* asyncCommitIterator(repository) {
       done = true;
     } else {
       current = await repository.getCommit(oids[0]);
-      current.x = 0;
-      current.y = index;
     }
   }
 }
@@ -86,7 +84,16 @@ export default class Repository extends Component {
 
   async loadCommits() {
     const result = await this.loader.load();
-    this.setState({ commits: result.value, hasMore: !result.done });
+    const commits = [];
+    if(this.state.fileChanges.length !== 0) {
+      const commit = {
+        sha: () => { return '' },
+        message: () => { return 'uncommitted changes' },
+        date: () => { return '' },
+      }
+      commits.push(commit);
+    }
+    this.setState({ commits: commits.concat(result.value), hasMore: !result.done });
   }
 
   render() {

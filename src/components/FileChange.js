@@ -26,7 +26,7 @@ export default class FileChange extends Component {
             <span className="deletion-count">--- {deletion}</span>
         </header>
         <div>
-          <Diff viewType="split" hunks={file.hunks} />
+          <Diff viewType="unified" hunks={file.hunks} />
         </div>
       </article>
     )

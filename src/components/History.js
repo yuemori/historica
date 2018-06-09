@@ -4,7 +4,8 @@ import InfiniteScroll from 'react-infinite-scroller';
 
 class Node extends Component {
   render() {
-    const {x, y, commit} = this.props;
+    const {y, commit} = this.props;
+    const x = 0;
     const dotStrokeWidth = 10;
     const contentHeight = 30;
     const width = '100%';
@@ -46,15 +47,9 @@ export default class History extends Component {
         >
           <svg width="100%" height={30 * commits.length}>
             {commits.map((commit, i) => {
-              const next = commits[i + 1];
-              const line = (next != null) ? (
-                <line x1={15 + 30 * commit.x} x2={15 + 30 * next.x} y1={15 + 30 * commit.y} y2={15 + 30 * next.y} stroke="#000000" />
-              ) : null
-
               return (
                 <g key={i}>
-                  <Node x={commit.x} y={commit.y} commit={commit} />
-                  {line}
+                  <Node y={i} commit={commit} />
                 </g>
               )
             })}
