@@ -35,7 +35,7 @@ export default class Repository extends Component {
   render() {
     const style = {
       overflow: "scroll",
-      height: "400px"
+      height: "300px"
     };
     return (
       <div>

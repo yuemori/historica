@@ -1,11 +1,6 @@
 import React, { Component } from 'react';
-// import PropTypes from 'prop-types';
 import Git from 'nodegit';
 import { Badge } from 'reactstrap';
-// import { Badge, Button } from 'reactstrap';
-// import FontAwesomeIcon from '@fortawesome/react-fontawesome'
-// import checkSquare from '@fortawesome/fontawesome-free-solid/faCheckSquare'
-// import Square from '@fortawesome/fontawesome-free-solid/faSquare'
 
 class Node extends Component {
   render() {
@@ -31,6 +26,26 @@ class Node extends Component {
   }
 }
 
+const commitLoader = (path, count) => {
+  const iterator = asyncCommitIterator(path);
+
+  return {
+    next: async (page) => {
+      const commits = [];
+      for(let i=0;i<count * page;i++) {
+        const result = await iterator.next();
+        if(result.done) {
+          return commits;
+        } else {
+          commits[i] = result.value;
+        }
+      }
+
+      return commits;
+    }
+  }
+}
+
 async function* asyncCommitIterator(path) {
   const repository = await Git.Repository.open(path);
   let index = 0
@@ -41,7 +56,7 @@ async function* asyncCommitIterator(path) {
 
   while(!done) {
     index++;
-    yield current
+    yield current;
     const oids = await current.parents();
     if(oids.length === 0) {
       done = true;
@@ -53,31 +68,31 @@ async function* asyncCommitIterator(path) {
   }
 }
 
+const nullLoader = () => {
+  return {
+    next: async () => {
+      return [];
+    }
+  }
+}
+
 export default class History extends Component {
   constructor(props) {
     super(props);
-    this.state = { path: props.path, commits: [], iterator: null };
+    this.state = { commits: [] };
+    this.loader = nullLoader();
+    this.loadCommits(1);
   }
 
   componentWillReceiveProps(newProps) {
-    this.setState({ path: newProps.path, commits: []});
-    const iterator = asyncCommitIterator(this.state.path + '/.git');
-
-    this.onNext(iterator, {done: false, value: null})
+    const {path} = newProps;
+    this.loader = commitLoader(path + '/.git', 20);
+    this.loadCommits(1);
   }
 
-  onNext(iterator, result) {
-    if(result.done) {
-      return;
-    }
-
-    if(result.value != null) {
-      this.setState({ commits: this.state.commits.concat([result.value]) });
-    }
-
-    iterator.next().then((result) => {
-      this.onNext(iterator, result);
-    })
+  async loadCommits(page) {
+    const commits = await this.loader.next(page);
+    this.setState({ commits: commits });
   }
 
   render() {
