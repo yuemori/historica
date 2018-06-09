@@ -33,13 +33,9 @@ export default class Repository extends Component {
   }
 
   render() {
-    const style = {
-      overflow: "scroll",
-      height: "300px"
-    };
     return (
       <div>
-        <Row className="mt-4" style={style}>
+        <Row className="mt-4">
           <Col>
             <History path={this.state.path} />
           </Col>

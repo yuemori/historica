@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import Git from 'nodegit';
 import { Badge } from 'reactstrap';
+import InfiniteScroll from 'react-infinite-scroller';
 
 class Node extends Component {
   render() {
@@ -28,20 +29,20 @@ class Node extends Component {
 
 const commitLoader = (path, count) => {
   const iterator = asyncCommitIterator(path);
+  const commits = [];
 
   return {
-    next: async (page) => {
-      const commits = [];
-      for(let i=0;i<count * page;i++) {
+    load: async () => {
+      for(let i=0;i<count;i++) {
         const result = await iterator.next();
         if(result.done) {
-          return commits;
+          return { value: commits, done: true };
         } else {
-          commits[i] = result.value;
+          commits.push(result.value);
         }
       }
 
-      return commits;
+      return { value: commits, done: false };
     }
   }
 }
@@ -70,7 +71,7 @@ async function* asyncCommitIterator(path) {
 
 const nullLoader = () => {
   return {
-    next: async () => {
+    load: async () => {
       return [];
     }
   }
@@ -79,41 +80,55 @@ const nullLoader = () => {
 export default class History extends Component {
   constructor(props) {
     super(props);
-    this.state = { commits: [] };
     this.loader = nullLoader();
-    this.loadCommits(1);
+    this.state = { commits: [], hasMore: false };
   }
 
   componentWillReceiveProps(newProps) {
     const {path} = newProps;
     this.loader = commitLoader(path + '/.git', 20);
-    this.loadCommits(1);
+    this.setState({ commits: [], hasMore: true });
   }
 
-  async loadCommits(page) {
-    const commits = await this.loader.next(page);
-    this.setState({ commits: commits });
+  async loadCommits() {
+    const result = await this.loader.load();
+    this.setState({ commits: result.value, hasMore: !result.done });
   }
 
   render() {
     const {commits} = this.state;
+    const style = {
+      overflow: "scroll",
+      height: "300px"
+    };
 
     return (
-      <svg width="100%" height={30 * commits.length}>
-        {commits.map((commit, i) => {
-          const next = commits[i + 1];
-          const line = (next != null) ? (
-            <line x1={15 + 30 * commit.x} x2={15 + 30 * next.x} y1={15 + 30 * commit.y} y2={15 + 30 * next.y} stroke="#000000" />
-          ) : null
+      <div style={style}>
+        <InfiniteScroll
+            pageStart={0}
+            loadMore={(page) => this.loadCommits(page)}
+            hasMore={this.state.hasMore}
+            loader={<div className="loader" key={0}>Loading ...</div>}
+            threshold={200}
+            useWindow={false}
+        >
+          <svg width="100%" height={30 * commits.length}>
+            {commits.map((commit, i) => {
+              const next = commits[i + 1];
+              const line = (next != null) ? (
+                <line x1={15 + 30 * commit.x} x2={15 + 30 * next.x} y1={15 + 30 * commit.y} y2={15 + 30 * next.y} stroke="#000000" />
+              ) : null
 
-          return (
-            <g key={commit.y}>
-              <Node x={commit.x} y={commit.y} commit={commit} />
-              {line}
-            </g>
-          )
-        })}
-      </svg>
+              return (
+                <g key={i}>
+                  <Node x={commit.x} y={commit.y} commit={commit} />
+                  {line}
+                </g>
+              )
+            })}
+          </svg>
+        </InfiniteScroll>
+      </div>
     )
   }
 }
