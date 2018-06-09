@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import Git from 'nodegit';
 import { Badge } from 'reactstrap';
 import InfiniteScroll from 'react-infinite-scroller';
 
@@ -27,76 +26,9 @@ class Node extends Component {
   }
 }
 
-const commitLoader = (path, count) => {
-  const iterator = asyncCommitIterator(path);
-  const commits = [];
-
-  return {
-    load: async () => {
-      for(let i=0;i<count;i++) {
-        const result = await iterator.next();
-        if(result.done) {
-          return { value: commits, done: true };
-        } else {
-          commits.push(result.value);
-        }
-      }
-
-      return { value: commits, done: false };
-    }
-  }
-}
-
-async function* asyncCommitIterator(path) {
-  const repository = await Git.Repository.open(path);
-  let index = 0
-  let current = await repository.getHeadCommit();
-  current.x = 0;
-  current.y = index;
-  let done = false;
-
-  while(!done) {
-    index++;
-    yield current;
-    const oids = await current.parents();
-    if(oids.length === 0) {
-      done = true;
-    } else {
-      current = await repository.getCommit(oids[0]);
-      current.x = 0;
-      current.y = index;
-    }
-  }
-}
-
-const nullLoader = () => {
-  return {
-    load: async () => {
-      return [];
-    }
-  }
-}
-
 export default class History extends Component {
-  constructor(props) {
-    super(props);
-    this.loader = nullLoader();
-    this.state = { commits: [], hasMore: false };
-  }
-
-  componentWillReceiveProps(newProps) {
-    const {path} = newProps;
-    this.loader = commitLoader(path + '/.git', 20);
-    this.setState({ commits: [], hasMore: true });
-  }
-
-  async loadCommits() {
-    const result = await this.loader.load();
-    this.setState({ commits: result.value, hasMore: !result.done });
-  }
-
   render() {
-    const {commits} = this.state;
+    const {loadFunc, hasMore, commits} = this.props;
     const style = {
       overflow: "scroll",
       height: "300px"
@@ -106,8 +38,8 @@ export default class History extends Component {
       <div style={style}>
         <InfiniteScroll
             pageStart={0}
-            loadMore={(page) => this.loadCommits(page)}
-            hasMore={this.state.hasMore}
+            loadMore={loadFunc}
+            hasMore={hasMore}
             loader={<div className="loader" key={0}>Loading ...</div>}
             threshold={200}
             useWindow={false}

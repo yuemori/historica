@@ -4,6 +4,56 @@ import { Row, Col } from 'reactstrap'
 import Git from 'nodegit';
 import History from './History';
 import Diff from './Diff';
+import HunkGenerator from './HunkGenerator'
+
+const commitLoader = (repository, count) => {
+  const iterator = asyncCommitIterator(repository);
+  const commits = [];
+
+  return {
+    load: async () => {
+      for(let i=0;i<count;i++) {
+        const result = await iterator.next();
+        if(result.done) {
+          return { value: commits, done: true };
+        } else {
+          commits.push(result.value);
+        }
+      }
+
+      return { value: commits, done: false };
+    }
+  }
+}
+
+async function* asyncCommitIterator(repository) {
+  let index = 0
+  let current = await repository.getHeadCommit();
+  current.x = 0;
+  current.y = index;
+  let done = false;
+
+  while(!done) {
+    index++;
+    yield current;
+    const oids = await current.parents();
+    if(oids.length === 0) {
+      done = true;
+    } else {
+      current = await repository.getCommit(oids[0]);
+      current.x = 0;
+      current.y = index;
+    }
+  }
+}
+
+const nullLoader = () => {
+  return {
+    load: async () => {
+      return { value: [], done: true };
+    }
+  }
+}
 
 export default class Repository extends Component {
   propTypes: {
@@ -12,37 +62,46 @@ export default class Repository extends Component {
 
   constructor(props) {
     super(props);
-    this.state = { path: props.path };
+    this.state = { commits: [], hasMore: false, fileChanges: [] };
     this.onOpen(props.path);
   }
 
   componentWillReceiveProps(newProps) {
-    this.setState({ path: newProps.path, head: null, ref1: null, ref2: null });
     this.onOpen(newProps.path);
   }
 
   async onOpen(path) {
+    this.loader = nullLoader();
+
     try {
       const repository = await Git.Repository.open(path + '/.git');
-      const head = await repository.getHeadCommit();
-      this.setState({ head: head.sha(), ref1: head.sha(), ref2: head.sha() });
+      const hunkGenerator = new HunkGenerator(repository);
+      const fileChanges = await hunkGenerator.getUnCommitedChanges();
+      this.loader = commitLoader(repository, 20);
+      this.setState({ commits: [], hasMore: true, fileChanges: fileChanges });
     } catch(err) {
-      this.setState({ head: null, ref1: null, ref2: null });
-      console.log(err);
+      this.setState({ commits: [], hasMore: false, fileChanges: [] });
     }
   }
 
+  async loadCommits() {
+    const result = await this.loader.load();
+    this.setState({ commits: result.value, hasMore: !result.done });
+  }
+
   render() {
+    const {hasMore, commits, fileChanges} = this.state;
+
     return (
       <div>
         <Row className="mt-4">
           <Col>
-            <History path={this.state.path} />
+            <History commits={commits} loadFunc={this.loadCommits.bind(this)} hasMore={hasMore} />
           </Col>
         </Row>
         <Row className="mt-4">
           <Col>
-            <Diff path={this.state.path} head={this.state.head} ref1={this.state.ref1} ref2={this.state.ref2}/>
+            <Diff fileChanges={fileChanges} />
           </Col>
         </Row>
       </div>
