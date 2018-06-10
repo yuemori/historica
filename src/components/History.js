@@ -27,9 +27,31 @@ class Node extends Component {
   }
 }
 
+class Column extends Component {
+  render() {
+    const {x, y, column} = this.props;
+
+    return <Node x={x} y={y} commit={column.commit} />
+  }
+}
+
+class Row extends Component {
+  render() {
+    const {row, y} = this.props;
+
+    return (
+      <g>
+        {row.map((column, x) => {
+          return <Column key={x} y={y} x={x} column={column} />
+        })}
+      </g>
+    )
+  }
+}
+
 export default class History extends Component {
   render() {
-    const {loadFunc, hasMore, commits} = this.props;
+    const {loadFunc, hasMore, rows} = this.props;
     const style = {
       overflow: "scroll",
       height: "300px"
@@ -45,13 +67,9 @@ export default class History extends Component {
             threshold={200}
             useWindow={false}
         >
-          <svg width="100%" height={30 * commits.length}>
-            {commits.map((commit, i) => {
-              return (
-                <g key={i}>
-                  <Node y={i} commit={commit} />
-                </g>
-              )
+          <svg width="100%" height={30 * rows.length}>
+            {rows.map((row, y) => {
+              return <Row key={y} y={y} row={row} />
             })}
           </svg>
         </InfiniteScroll>
