@@ -7,6 +7,7 @@ body {
 }
 
 .diff-file {
+    font-size: 12px !important;
     margin-top: 2em;
     border: 1px solid #e1e1e1;
 }
@@ -52,3 +53,56 @@ body {
     color: #999;
 }
 
+
+#commit-table {
+  width: 100%;
+  table-layout: fixed;
+}
+
+#commit-table td,th {
+  font-size: 12px;
+  position: relative;
+}
+
+#commit-table td {
+  height: 30px;
+}
+
+#commit-table td div {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  line-height: 30px;
+  vertical-align: middle;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 10px;
+}
+
+#commit-table td.commit-table-column-graph {
+  width: 90px;
+  padding: 0;
+}
+
+#commit-table .commit-table-column-graph svg {
+  width: 100%;
+}
+
+#commit-table .commit-table-column-message {
+  width: 40%;
+  max-width: 60%;
+}
+
+#commit-table .commit-table-column-author {
+  width: 100px;
+}
+
+#commit-table .commit-table-column-sha {
+  width: 80px;
+}
+
+#commit-table .commit-table-column-date {
+  width: 100px;
+}

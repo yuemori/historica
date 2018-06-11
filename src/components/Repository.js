@@ -6,55 +6,38 @@ import History from './History';
 import Diff from './Diff';
 import HunkGenerator from '../models/HunkGenerator'
 
-class TreeRow {
-  constructor() {
-    this.columns = [];
-  }
-
-  map(callback) {
-    return this.columns.map(callback)
-  }
-
-  register(columns) {
-    columns.forEach((column) => {
-      this.columns.push({
-        commit: column.commit,
-        oid: column.oid
-      });
-    });
-  }
-}
-
-class TreeColumn {
-  constructor(x) {
-    this.x = x;
-  }
-
-  reserve(oid) {
-    this.oid = oid.tostrS();
-  }
-
-  register(commit) {
-    this.commit = commit;
-    this.reserve(commit.id())
-  }
-}
-
-const treeLoader = (repository, count) => {
+const commitLoader = async (repository, count) => {
   const iterator = asyncCommitIterator(repository);
-  const columns = [];
+  const commits = [];
 
-  for(let i=0;i<30;i++) {
-    columns.push(new TreeColumn(i));
-  }
-  const rows = [];
+  const hunkGenerator = new HunkGenerator(repository);
+  const fileChanges = await hunkGenerator.getUnCommitedChanges();
 
-  const findColumnByOid = (oid) => {
-    return columns.find(c => c.oid === oid.tostrS());
-  }
+  if(fileChanges.length !== 0) {
+    const head = await repository.getHeadCommit();
 
-  const findEmptyColumn = () => {
-    return columns.find(c => c.oid == null);
+    const commit = {
+      id: () => {
+        return {
+          tostrS: () => { return '' }
+        }
+      },
+      sha: () => { return '' },
+      message: () => { return 'uncommitted changes' },
+      date: () => { return '' },
+      refs: [],
+      author: () => {
+        return { 
+          name: () => { return '' }
+        }
+      },
+      parents: () => {
+        return [head.id()]
+      },
+      fileChanges: fileChanges
+    }
+
+    commits.push(commit);
   }
 
   return {
@@ -62,41 +45,13 @@ const treeLoader = (repository, count) => {
       for(let i=0;i<count;i++) {
         const result = await iterator.next();
         if(result.done) {
-          return { value: rows, done: true };
+          return { value: commits, done: true };
         } else {
-          const row = new TreeRow();
-          const commit = result.value;
-          let column = findColumnByOid(commit.id())
-
-          if(column == null) {
-            column = findEmptyColumn();
-          }
-
-          column.register(commit);
-          row.register(columns)
-          rows.push(row);
-          columns.forEach(c => c.commit = null);
-          column.oid = null
-
-          const parents = commit.parents();
-
-          if(parents.length !== 0) {
-            if(findColumnByOid(parents[0]) == null) {
-              column.reserve(parents[0]);
-            }
-          }
-
-          parents.slice(1, parents.length).forEach((p) => {
-            let column = findColumnByOid(p)
-
-            if(column == null) {
-              findEmptyColumn().reserve(p);
-            }
-          });
+          commits.push(result.value);
         }
       }
 
-      return { value: rows, done: false };
+      return { value: commits, done: false };
     }
   }
 }
@@ -148,7 +103,7 @@ export default class Repository extends Component {
 
   constructor(props) {
     super(props);
-    this.state = { rows: [], hasMore: false, fileChanges: [] };
+    this.state = { commits: [], hasMore: false, fileChanges: [] };
     this.onOpen(props.path);
   }
 
@@ -161,42 +116,31 @@ export default class Repository extends Component {
 
     try {
       const repository = await Git.Repository.open(path + '/.git');
-      const hunkGenerator = new HunkGenerator(repository);
-      const fileChanges = await hunkGenerator.getUnCommitedChanges();
-      this.loader = await treeLoader(repository, 20);
-      this.setState({ rows: [], hasMore: true, fileChanges: fileChanges });
+      this.loader = await commitLoader(repository, 20);
+      this.setState({ commits: [], hasMore: true });
     } catch(err) {
-      this.setState({ rows: [], hasMore: false, fileChanges: [] });
+      this.setState({ commits: [], hasMore: false });
     }
   }
 
   async loadCommitTree() {
     const result = await this.loader.load();
-    const rows = [];
-    if(this.state.fileChanges.length !== 0) {
-      const commit = {
-        sha: () => { return '' },
-        message: () => { return 'uncommitted changes' },
-        date: () => { return '' },
-        refs: []
-      }
-      const column = {
-        commit: commit,
-        oid: ''
-      }
-      rows.push([column]);
+    let fileChanges = result.value[0].fileChanges;
+    if(fileChanges == null) {
+      fileChanges = [];
     }
-    this.setState({ rows: rows.concat(result.value), hasMore: !result.done });
+
+    this.setState({ commits: result.value, hasMore: !result.done, fileChanges: fileChanges });
   }
 
   render() {
-    const {hasMore, rows, fileChanges} = this.state;
+    const {hasMore, commits, fileChanges} = this.state;
 
     return (
       <div>
         <Row className="mt-4">
           <Col>
-            <History rows={rows} loadFunc={this.loadCommitTree.bind(this)} hasMore={hasMore} />
+            <History commits={commits} loadFunc={this.loadCommitTree.bind(this)} hasMore={hasMore} />
           </Col>
         </Row>
         <Row className="mt-4">
