@@ -4,8 +4,7 @@ import InfiniteScroll from 'react-infinite-scroller';
 
 class Node extends Component {
   render() {
-    const {y, commit} = this.props;
-    const x = 0;
+    const {x, y, commit} = this.props;
     const dotStrokeWidth = 10;
     const contentHeight = 30;
     const width = '100%';
@@ -17,8 +16,11 @@ class Node extends Component {
     return (
       <g key={x + '-' + y} width={width} height={contentHeight} y="30" x={100 * x}>
         <circle cx={cx} cy={cy} r={dotStrokeWidth}/>
-        <foreignObject width="100%" height={contentHeight} className="node" x={50} y={contentHeight * y}>
+        <foreignObject width="100%" height={contentHeight} className="node" x={300} y={contentHeight * y}>
           <Badge className="mr-2" style={{"width": "80px"}}>{shortSha}</Badge>
+          {commit.refs.map((ref, i) => {
+            return <Badge key={i} color="primary" className="mr-2">{ref.name()}</Badge>
+          })}
 
           {shortMessage}
         </foreignObject>
@@ -31,7 +33,11 @@ class Column extends Component {
   render() {
     const {x, y, column} = this.props;
 
-    return <Node x={x} y={y} commit={column.commit} />
+    if(column.commit != null) {
+      return <Node x={x} y={y} commit={column.commit} />
+    } else {
+      return null;
+    }
   }
 }
 

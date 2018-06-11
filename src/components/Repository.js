@@ -26,15 +26,36 @@ class TreeRow {
 }
 
 class TreeColumn {
-  reserve(commit) {
+  constructor(x) {
+    this.x = x;
+  }
+
+  reserve(oid) {
+    this.oid = oid.tostrS();
+  }
+
+  register(commit) {
     this.commit = commit;
-    this.oid = commit.id().tostrS();
+    this.reserve(commit.id())
   }
 }
 
 const treeLoader = (repository, count) => {
   const iterator = asyncCommitIterator(repository);
+  const columns = [];
+
+  for(let i=0;i<30;i++) {
+    columns.push(new TreeColumn(i));
+  }
   const rows = [];
+
+  const findColumnByOid = (oid) => {
+    return columns.find(c => c.oid === oid.tostrS());
+  }
+
+  const findEmptyColumn = () => {
+    return columns.find(c => c.oid == null);
+  }
 
   return {
     load: async () => {
@@ -45,11 +66,33 @@ const treeLoader = (repository, count) => {
         } else {
           const row = new TreeRow();
           const commit = result.value;
-          const column = new TreeColumn();
-          column.reserve(commit);
-          row.register([column])
+          let column = findColumnByOid(commit.id())
 
+          if(column == null) {
+            column = findEmptyColumn();
+          }
+
+          column.register(commit);
+          row.register(columns)
           rows.push(row);
+          columns.forEach(c => c.commit = null);
+          column.oid = null
+
+          const parents = commit.parents();
+
+          if(parents.length !== 0) {
+            if(findColumnByOid(parents[0]) == null) {
+              column.reserve(parents[0]);
+            }
+          }
+
+          parents.slice(1, parents.length).forEach((p) => {
+            let column = findColumnByOid(p)
+
+            if(column == null) {
+              findEmptyColumn().reserve(p);
+            }
+          });
         }
       }
 
@@ -59,16 +102,33 @@ const treeLoader = (repository, count) => {
 }
 
 async function* asyncCommitIterator(repository) {
-  let current = await repository.getHeadCommit();
+  const worker = await repository.createRevWalk();
+  const refs = await repository.getReferences(Git.Reference.TYPE.OID);
+  refs.forEach(ref => worker.push(ref));
+  worker.pushHead();
+  worker.sorting(Git.Revwalk.SORT.TOPOLOGICAL);
+
   let done = false;
 
   while(!done) {
-    yield current;
-    const oids = await current.parents();
-    if(oids.length === 0) {
+    let oid = null;
+    try {
+      oid = await worker.next();
+    } catch(err) {
+      // for empty repository
       done = true;
-    } else {
-      current = await repository.getCommit(oids[0]);
+    }
+
+    if(oid != null) {
+      const current = await repository.getCommit(oid);
+      current.refs = refs.filter(r => { return r.target().equal(current.id()); });
+
+      yield current;
+
+      const oids = await current.parents();
+      if(oids.length === 0) {
+        done = true;
+      }
     }
   }
 }
@@ -118,6 +178,7 @@ export default class Repository extends Component {
         sha: () => { return '' },
         message: () => { return 'uncommitted changes' },
         date: () => { return '' },
+        refs: []
       }
       const column = {
         commit: commit,
