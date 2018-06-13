@@ -1,28 +1,19 @@
 import React, { Component } from 'react';
 import { Table } from 'reactstrap';
 import InfiniteScroll from 'react-infinite-scroller';
+import GraphBuilder from '../models/GraphBuilder';
 
 const dotStrokeWidth = 5;
 const contentHeight = 30;
 
-const nextColor = () => {
-  // TODO: implement
-  return "#000000";
-}
-
 const commitBuilder = (commit) => {
   return {
     message: commit.message(),
-    sha: commit.id().tostrS(),
+    id: commit.id().tostrS(),
     author: commit.author().name(),
     date: commit.date(),
-    parentOids: commit.parents().map(oid => oid.tostrS()),
+    parentIds: commit.parents().map(oid => oid.tostrS()),
   }
-}
-
-const GraphBuilder = (commits) => {
-  // TODO
-  return [];
 }
 
 const Node = (props) => {
@@ -34,12 +25,12 @@ const Node = (props) => {
 }
 
 const Row = (props) => {
+  const {row} = props;
+
   return (
     <g>
-      {props.columns.map((column, x) => {
-        // console.log(`commit: ${column.commit}, x: ${x}`)
-
-        if(column.commit != null) {
+      {row.columns.map((column, x) => {
+        if(column.id === row.commit.id) {
           return <Node key={x} x={x} y={props.y} />
         }
 
@@ -49,12 +40,12 @@ const Row = (props) => {
   )
 }
 const Graph = (props) => {
-  const maxY = props.tree.length * contentHeight;
+  const maxY = props.rows.length * contentHeight;
 
   return (
     <svg height={maxY}>
-    {props.tree.map((columns, y) => {
-      return <Row key={y} y={y} columns={columns} />
+    {props.rows.map((row, y) => {
+      return <Row key={y} y={y} row={row} />
     })}
     </svg>
   )
@@ -63,7 +54,7 @@ const Graph = (props) => {
 export default class History extends Component {
   render() {
     const {loadFunc, hasMore, commits} = this.props;
-    const tree = GraphBuilder(commits);
+    const rows = GraphBuilder(commits.map(commitBuilder));
     const style = {
       overflow: "scroll",
       height: "300px"
@@ -93,7 +84,7 @@ export default class History extends Component {
             </thead>
             <tbody>
               <tr>
-                <td className="commit-table-column-graph" rowSpan={commits.length + 10}><Graph tree={tree} /></td>
+                <td className="commit-table-column-graph" rowSpan={commits.length + 10}><Graph rows={rows} /></td>
               </tr>
             {commits.map((commit, y) => {
               return (
